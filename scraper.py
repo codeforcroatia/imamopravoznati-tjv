@@ -57,10 +57,27 @@ Created on Wed Nov  6 01:10:23 2019
 
 import pandas as pd
 import numpy as np       
-
+import os
 import sqlite3
+import re
+import validators
+import dateutil.parser as parser
 
 # Scraping the Data
+def isValidEmail(email):
+ if len(email) > 7:
+  if re.match("^.+@([?)[a-zA-Z0-9-.]+.([a-zA-Z]{2,3}|[0-9]{1,3})(]?))$", email) != None:
+   return True
+ return False
+
+def isValidWebsite(web):
+    if not validators.url('http://'+web):
+        return False
+    return True
+
+def dateConvertor(date):
+    new_date = parser.parse(date)
+    return new_date.isoformat()
 
 base_data = pd.read_csv("http://tjv.pristupinfo.hr/?sort=1&page=1&download",converters={'OIB': lambda x: str(x)} ,error_bad_lines=False,sep=';',index_col='Rb.')
 
@@ -125,8 +142,8 @@ base_data["foi_officer_email"] = base_data.foi_officer_email.fillna(np.nan)
 base_data["website"] = base_data.website.fillna(np.nan)     
 
 # Getting the data that is already in a server
-
-server_data = pd.read_csv("https://api.morph.io/SelectSoft/blue_gene/data.csv?key=7hDDGSosf23K7474Bd4P&query=select%20*%20from%20%22data%22",converters={'vat_number': lambda x: str(x)},error_bad_lines=False,sep=',')
+my_secret_value = os.environ['MORPH_MYSECRET']
+server_data = pd.read_csv("https://api.morph.io/SelectSoft/blue_gene/data.csv?key="+my_secret_value+"&query=select%20*%20from%20%22data%22",converters={'vat_number': lambda x: str(x)},error_bad_lines=False,sep=',')
 
 server_data["vat_number"] =server_data.vat_number.astype('str')
 # Seprating the OIB from tags
@@ -197,8 +214,40 @@ allData = pd.concat([updated , new, removed]);
 
 allData = allData.drop_duplicates(subset=['vat_number'], keep=False)
 
+allData['email_validation_pass'] = ""
+allData['website_validation_pass'] = ""
+allData['foi_officer_email_validation_pass'] = ""
+allData = allData.reset_index()
+for x in range(len(allData)):
+    if(isValidEmail(allData['email'][x]) and allData['email'][x] ):
+        allData['email_validation_pass'][x] = "true"
+    elif(not allData['email'][x]):
+        allData['email_validation_pass'][x] = "nan"
+    else:
+        allData['email_validation_pass'][x] = "fail"
+        
+    if(isValidEmail(allData['foi_officer_email'][x]) and allData['foi_officer_email'][x]):
+        allData['foi_officer_email_validation_pass'][x] = "true"
+    elif(not allData['foi_officer_email'][x]):
+        allData['foi_officer_email_validation_pass'][x] = "nan"
+    else:
+        allData['foi_officer_email_validation_pass'][x] = "fail"
+        
+    if(isValidWebsite(allData['website'][x]) and allData['website'][x]):
+        allData['website_validation_pass'][x]= "true"
+    elif(not allData['website'][x]):
+        allData['website_validation_pass'][x] = "nan"
+    else:
+        allData['website_validation_pass'][x] = "fail"
+        if(not pd.isnull(allData['last_updated'][x])):
+            allData['last_updated'][x] = dateConvertor(allData['last_updated'][x])
+
 conn = sqlite3.connect("data.sqlite")
 
 conn.execute("CREATE TABLE if not exists data ('entity_name', 'vat_number', 'postal_address', 'zip_code', 'city', 'telephone', 'telefax','website', 'email', 'foi_officer_name', 'foi_officer_telephone','foi_officer_email', 'founder', 'legal_status', 'topics','last_updated','status')")
 
 allData.to_sql("data", conn, if_exists='replace', index=False)
+
+
+
+
