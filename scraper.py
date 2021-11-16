@@ -142,8 +142,8 @@ base_data["foi_officer_email"] = base_data.foi_officer_email.fillna(np.nan)
 base_data["website"] = base_data.website.fillna(np.nan)     
 
 # Getting the data that is already in a server
-my_secret_value = os.environ['MORPH_SECRET']
-server_data = pd.read_csv("https://api.morph.io/codeforcroatia/imamopravoznati-tjv/data.csv?key=plmU7%2BXNnN04QmUBA46F&query=select%20*%20from%20%22data%22",converters={'vat_number': lambda x: str(x)},error_bad_lines=False,sep=',')
+my_secret_value = os.environ['MORPH_MYSECRET']
+server_data = pd.read_csv("https://api.morph.io/SelectSoft/blue_gene/data.csv?key="+my_secret_value+"&query=select%20*%20from%20%22data%22",converters={'vat_number': lambda x: str(x)},error_bad_lines=False,sep=',')
 
 server_data["vat_number"] =server_data.vat_number.astype('str')
 # Seprating the OIB from tags
@@ -247,7 +247,6 @@ conn = sqlite3.connect("data.sqlite")
 conn.execute("CREATE TABLE if not exists data ('entity_name', 'vat_number', 'postal_address', 'zip_code', 'city', 'telephone', 'telefax','website', 'email', 'foi_officer_name', 'foi_officer_telephone','foi_officer_email', 'founder', 'legal_status', 'topics','last_updated','status')")
 
 allData.to_sql("data", conn, if_exists='replace', index=False)
-
 
 
 
