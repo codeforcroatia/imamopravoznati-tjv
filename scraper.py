@@ -146,7 +146,7 @@ base_data["website"] = base_data.website.fillna(np.nan)
 
 # Getting the data that is already in a server
 my_secret_value = os.environ['MORPH_MYSECRET']
-server_data = pd.read_csv("https://api.morph.io/SelectSoft/blue_gene/data.csv?key="+my_secret_value+"&query=select%20*%20from%20%22data%22",converters={'vat_number': lambda x: str(x)},error_bad_lines=False,sep=',')
+server_data = pd.read_csv("https://api.morph.io/codeforcroatia/imamopravoznati-tjv/data.csv?key="+my_secret_value+"&query=select%20*%20from%20%22data%22",converters={'vat_number': lambda x: str(x)},error_bad_lines=False,sep=',')
 
 server_data["vat_number"] =server_data.vat_number.astype('str')
 # Seprating the OIB from tags
