@@ -154,8 +154,10 @@ server_data["vat_number"] =server_data.vat_number.astype('str')
 base_data = base_data.reset_index()
 base_data = base_data.drop({'Rb.'},1)
 
-server_data = server_data.reset_index()
-server_data = server_data.drop({'index'},1)
+server_data = server_data.reset_index(drop=True)
+server_data = server_data.drop(
+    columns=['index', 'email_validation_pass', 'website_validation_pass', 'foi_officer_email_validation_pass',
+             'status'])  # concat does not work if these columns are not removed
 # server_data["vat_number"] = server_data['tag_string'].str.extract('(\d+)')
 
 # Changes the dataType of OIB Column
@@ -172,7 +174,7 @@ server_data = server_data.drop({'index'},1)
 
 # Updated    Data that is in both file come in updated 
 
-updatedFlagServer = base_data['vat_number'].isin(server_data['vat_number']) & (server_data['vat_number'].notnull())
+updatedFlagServer = base_data['vat_number'].isin(server_data['vat_number']) & (base_data['vat_number'].notnull())
 updated = base_data[updatedFlagServer]
 #updatedFlag = base_data['vat_number'].isin(updated['vat_number']) & (updated['vat_number'].notnull())
 #updated = base_data[updatedFlag]
@@ -184,8 +186,8 @@ updated['status'] = 'updated'
 # ab = base_data.vat_number.isin(server_data.vat_number)
 
 # removed
-removedflag = base_data['vat_number'].isin(server_data['vat_number'])
-removed = base_data[~removedflag]
+removedflag = server_data['vat_number'].isin(base_data['vat_number'])
+removed = server_data[~removedflag]
 
 
 
@@ -220,7 +222,12 @@ allData = allData.drop_duplicates(subset=['vat_number'], keep=False)
 allData['email_validation_pass'] = ""
 allData['website_validation_pass'] = ""
 allData['foi_officer_email_validation_pass'] = ""
-allData = allData.reset_index()
+allData = allData.reset_index(drop=True)
+
+allData['email'] = allData['email'].replace({np.nan: ''})
+allData['foi_officer_email'] = allData['foi_officer_email'].replace({np.nan: ''})
+allData['website'] = allData['website'].replace({np.nan: ''})
+
 for x in range(len(allData)):
     if(isValidEmail(allData['email'][x]) and allData['email'][x] ):
         allData['email_validation_pass'][x] = "true"
